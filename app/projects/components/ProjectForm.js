@@ -1,143 +1,260 @@
 'use client'
-import { useState } from 'react'
-import TechnologyInput from './TechnologyInput'
+import { useState } from "react";
+import TechnologyInput from "./TechnologyInput";
 
 export default function ProjectForm({ onSubmit, onCancel, isOpen }) {
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [imageUrl, setImageUrl] = useState('')
-  const [projectUrl, setProjectUrl] = useState('')
-  const [githubUrl, setGithubUrl] = useState('')
-  const [technologies, setTechnologies] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [errors, setErrors] = useState({})
-
-  if (!isOpen) return null
-
-  const validate = () => {
-    const newErrors = {}
-    if (!title) newErrors.title = 'Title is required'
-    if (!description) newErrors.description = 'Description is required'
-    if (!technologies || technologies.length === 0) newErrors.technologies = 'At least one technology is required'
-    if (imageUrl && !/^https?:\/\/.+\..+/.test(imageUrl)) newErrors.imageUrl = 'Invalid image URL'
-    if (projectUrl && !/^https?:\/\/.+\..+/.test(projectUrl)) newErrors.projectUrl = 'Invalid project URL'
-    if (githubUrl && !/^https?:\/\/.+\..+/.test(githubUrl)) newErrors.githubUrl = 'Invalid GitHub URL'
-      if (!projectUrl.trim() || !/^https?:\/\/.+\..+/.test(projectUrl)) {
-        newErrors.projectUrl = 'Please enter a valid URL';
-      }
-    return newErrors
-  }
-
+  // Form field states
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [projectUrl, setProjectUrl] = useState('');
+  const [githubUrl, setGithubUrl] = useState('');
+  const [technologies, setTechnologies] = useState([]);
+  
+  // UI states
+  const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!title.trim()) {
+      newErrors.title = 'Title is required';
+    }
+    
+    if (!description.trim()) {
+      newErrors.description = 'Description is required';
+    }
+    
+    if (technologies.length === 0) {
+      newErrors.technologies = 'At least one technology is required';
+    }
+    
+    // URL regex for external URLs (http/https)
+    const externalUrlRegex = /^https?:\/\/.+\..+/;
+    // Regex for relative paths (starts with /)
+    const relativePathRegex = /^\//;
+    
+    if (imageUrl && !externalUrlRegex.test(imageUrl) && !relativePathRegex.test(imageUrl)) {
+      newErrors.imageUrl = 'Please enter a valid URL';
+    }
+    
+    if (projectUrl && !externalUrlRegex.test(projectUrl)) {
+      newErrors.projectUrl = 'Please enter a valid URL';
+    }
+    
+    if (githubUrl && !externalUrlRegex.test(githubUrl)) {
+      newErrors.githubUrl = 'Please enter a valid URL';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+  
+  const resetForm = () => {
+    setTitle('');
+    setDescription('');
+    setImageUrl('');
+    setProjectUrl('');
+    setGithubUrl('');
+    setTechnologies([]);
+    setErrors({});
+    setIsLoading(false);
+  };
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const newErrors = validate();
-    setErrors(newErrors);
-    if (Object.keys(newErrors).length > 0) return;
-    setLoading(true);
-    // Add a short delay to ensure loading state is visible for tests
-    await new Promise(res => setTimeout(res, 150));
-    try {
-      if (onSubmit) {
-        await onSubmit({
-          title,
-          description,
-          imageUrl,
-          projectUrl,
-          githubUrl,
-          technologies,
-        });
-      }
-      setTitle('');
-      setDescription('');
-      setImageUrl('');
-      setProjectUrl('');
-      setGithubUrl('');
-      setTechnologies([]);
-      setErrors({});
-    } catch (err) {
-      setErrors({ submit: 'Failed to submit project' });
+    
+    if (!validateForm()) {
+      return;
     }
-    setLoading(false);
+    
+    setIsLoading(true);
+    
+    try {
+      const formData = {
+        title,
+        description,
+        imageUrl,
+        projectUrl,
+        githubUrl,
+        technologies
+      };
+      
+      await onSubmit(formData);
+      resetForm();
+    } catch (error) {
+      setErrors({ 
+        submit: error.message || 'Failed to submit project. Please try again.' 
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
-
+  
+  if (!isOpen) return null;
+  
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-8">
-      <h2 className="text-2xl font-bold mb-6">Add New Project</h2>
-      <div className="mb-4">
-        <label htmlFor="title" className="block font-bold mb-2">Project Title</label>
-        <input
-          id="title"
-          type="text"
-          value={title}
-          onChange={e => setTitle(e.target.value)}
-          className={`w-full border px-3 py-2 rounded${errors.title ? ' border-red-500' : ''}`}
-        />
-        {errors.title && <p className="text-red-600 text-sm mt-1">{errors.title}</p>}
-      </div>
-      <div className="mb-4">
-        <label htmlFor="description" className="block font-bold mb-2">Description</label>
-        <textarea
-          id="description"
-          value={description}
-          onChange={e => setDescription(e.target.value)}
-          className={`w-full border px-3 py-2 rounded${errors.description ? ' border-red-500' : ''}`}
-        />
-        {errors.description && <p className="text-red-600 text-sm mt-1">{errors.description}</p>}
-      </div>
-      <div className="mb-4">
-        <label htmlFor="imageUrl" className="block font-bold mb-2">Image URL</label>
-        <input
-          id="imageUrl"
-          type="text"
-          value={imageUrl}
-          onChange={e => setImageUrl(e.target.value)}
-          className={`w-full border px-3 py-2 rounded${errors.imageUrl ? ' border-red-500' : ''}`}
-        />
-        {errors.imageUrl && <p className="text-red-600 text-sm mt-1">{errors.imageUrl}</p>}
-      </div>
-      <div className="mb-4">
-        <label htmlFor="projectUrl" className="block font-bold mb-2">Live Demo URL</label>
-        <input
-          id="projectUrl"
-          type="text"
-          value={projectUrl}
-          onChange={e => setProjectUrl(e.target.value)}
-          className={`w-full border px-3 py-2 rounded${errors.projectUrl ? ' border-red-500' : ''}`}
-        />
-          {errors.projectUrl && (
-            <p className="text-red-600 text-sm mt-1" id="projectUrl-error">
-              Please enter a valid URL
-            </p>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+        <h2 className="text-2xl font-bold mb-6">Add New Project</h2>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Title */}
+          <div>
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+              Project Title <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                errors.title 
+                  ? 'border-red-500 focus:ring-red-500' 
+                  : 'border-gray-300 focus:ring-blue-500'
+              }`}
+              placeholder="My Awesome Project"
+            />
+            {errors.title && (
+              <p className="text-red-600 text-sm mt-1">{errors.title}</p>
+            )}
+          </div>
+          
+          {/* Description */}
+          <div>
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+              Project Description <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={4}
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                errors.description 
+                  ? 'border-red-500 focus:ring-red-500' 
+                  : 'border-gray-300 focus:ring-blue-500'
+              }`}
+              placeholder="Describe your project..."
+            />
+            {errors.description && (
+              <p className="text-red-600 text-sm mt-1">{errors.description}</p>
+            )}
+          </div>
+          
+          {/* Image URL */}
+          <div>
+            <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 mb-1">
+              Image URL
+            </label>
+            <input
+              type="text"
+              id="imageUrl"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                errors.imageUrl 
+                  ? 'border-red-500 focus:ring-red-500' 
+                  : 'border-gray-300 focus:ring-blue-500'
+              }`}
+              placeholder="https://example.com/image.jpg"
+            />
+            {errors.imageUrl && (
+              <p className="text-red-600 text-sm mt-1">{errors.imageUrl}</p>
+            )}
+          </div>
+          
+          {/* Project URL */}
+          <div>
+            <label htmlFor="projectUrl" className="block text-sm font-medium text-gray-700 mb-1">
+              Project URL
+            </label>
+            <input
+              type="text"
+              id="projectUrl"
+              value={projectUrl}
+              onChange={(e) => setProjectUrl(e.target.value)}
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                errors.projectUrl 
+                  ? 'border-red-500 focus:ring-red-500' 
+                  : 'border-gray-300 focus:ring-blue-500'
+              }`}
+              placeholder="https://myproject.com"
+            />
+            {errors.projectUrl && (
+              <p className="text-red-600 text-sm mt-1">{errors.projectUrl}</p>
+            )}
+          </div>
+          
+          {/* GitHub URL */}
+          <div>
+            <label htmlFor="githubUrl" className="block text-sm font-medium text-gray-700 mb-1">
+              GitHub URL
+            </label>
+            <input
+              type="text"
+              id="githubUrl"
+              value={githubUrl}
+              onChange={(e) => setGithubUrl(e.target.value)}
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                errors.githubUrl 
+                  ? 'border-red-500 focus:ring-red-500' 
+                  : 'border-gray-300 focus:ring-blue-500'
+              }`}
+              placeholder="https://github.com/username/repo"
+            />
+            {errors.githubUrl && (
+              <p className="text-red-600 text-sm mt-1">{errors.githubUrl}</p>
+            )}
+          </div>
+          
+          {/* Technologies */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Technologies <span className="text-red-500">*</span>
+            </label>
+            <TechnologyInput
+              technologies={technologies}
+              onChange={setTechnologies}
+              error={errors.technologies}
+            />
+            {errors.technologies && (
+              <p className="text-red-600 text-sm mt-1">{errors.technologies}</p>
+            )}
+          </div>
+          
+          {/* Submit Error */}
+          {errors.submit && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-600 text-sm">{errors.submit}</p>
+            </div>
           )}
+          
+          {/* Action Buttons */}
+          <div className="flex gap-3 justify-end pt-4">
+            <button
+              type="button"
+              onClick={() => {
+                resetForm();
+                onCancel();
+              }}
+              disabled={isLoading}
+              className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? 'Creating Project...' : 'Create Project'}
+            </button>
+          </div>
+        </form>
       </div>
-      <div className="mb-4">
-        <label htmlFor="githubUrl" className="block font-bold mb-2">GitHub URL</label>
-        <input
-          id="githubUrl"
-          type="text"
-          value={githubUrl}
-          onChange={e => setGithubUrl(e.target.value)}
-          className={`w-full border px-3 py-2 rounded${errors.githubUrl ? ' border-red-500' : ''}`}
-        />
-        {errors.githubUrl && <p className="text-red-600 text-sm mt-1">{errors.githubUrl}</p>}
-      </div>
-      <div className="mb-4">
-        <label className="block font-bold mb-2">Technologies</label>
-        <TechnologyInput technologies={technologies} onChange={setTechnologies} />
-        {errors.technologies && <p className="text-red-600 text-sm mt-1">{errors.technologies}</p>}
-      </div>
-      {errors.submit && <p className="text-red-600 text-sm mb-2">{errors.submit}</p>}
-      <div className="flex gap-4">
-        {loading && (
-          <p className="text-blue-600 text-sm mr-4">Creating Project...</p>
-        )}
-        <button type="submit" className="bg-green-600 text-white px-6 py-2 rounded" disabled={loading}>
-          {loading ? 'Creating Project...' : 'Create Project'}
-        </button>
-        <button type="button" className="bg-gray-300 px-6 py-2 rounded" onClick={onCancel}>
-          Cancel
-        </button>
-      </div>
-    </form>
-  )
+    </div>
+  );
 }

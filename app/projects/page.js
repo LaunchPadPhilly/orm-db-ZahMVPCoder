@@ -1,28 +1,75 @@
-import Image from 'next/image';
-import Link from 'next/link';
+"use client"
+import { useEffect, useState } from 'react'
+import Image from 'next/image'
+import Link from 'next/link'
+import ProjectForm from './components/ProjectForm'
 
 export default function Projects() {
-  // TODO: Students will implement the following:
-  // 1. Convert this server component to a client component
-  // 2. Add state management for projects, loading, and form visibility
-  // 3. Implement API fetch functions to get projects from the database
-  // 4. Add project creation functionality using the ProjectForm component
-  // 5. Handle loading and error states
+  const [projects, setProjects] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [error, setError] = useState(null)
 
-  // For now, show placeholder content
-  const placeholderProjects = [];
+  useEffect(() => {
+    let mounted = true
+    async function load() {
+      setLoading(true)
+      try {
+        const res = await fetch('/api/projects')
+        const data = await res.json()
+        if (mounted) setProjects(data || [])
+      } catch (err) {
+        console.error(err)
+        if (mounted) setError('Failed to load projects')
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+    load()
+    return () => { mounted = false }
+  }, [])
+
+  async function handleCreate(formData) {
+    try {
+      const res = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      })
+      if (!res.ok) throw new Error('Failed to create project')
+      const created = await res.json()
+      // prepend created project
+      setProjects(prev => [created, ...prev])
+      setShowForm(false)
+    } catch (err) {
+      console.error(err)
+      setError('Failed to create project')
+    }
+  }
 
   return (
     <div className="min-h-screen p-8 bg-gradient-to-br from-teal-50 to-green-50">
       <div className="max-w-6xl mx-auto">
-        {/* Header - students will add "Add New Project" button here */}
+        {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-4">
           <h1 className="text-5xl font-bold text-gray-900">My Projects</h1>
-          {/* TODO: Add "Add New Project" button that shows/hides the form */}
+          <div className="flex items-center gap-3">
+            <button
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+              onClick={() => setShowForm(true)}
+              aria-label="Add New Project"
+            >
+              Add New Project
+            </button>
+          </div>
         </div>
 
-        {/* TODO: Add ProjectForm component here */}
-        {/* The form should be conditionally rendered based on showForm state */}
+        {/* Conditionally render form */}
+        {showForm && (
+          <div className="mb-8">
+            <ProjectForm isOpen={true} onSubmit={handleCreate} onCancel={() => setShowForm(false)} />
+          </div>
+        )}
 
         {/* Projects Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
