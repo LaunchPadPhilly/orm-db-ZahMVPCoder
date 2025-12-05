@@ -618,7 +618,7 @@ Now that your database is working, let's customize the rest of your portfolio!
 1. **Change the heading** to include your name
    ```javascript
    <h1 className="text-6xl font-bold mb-6">
-     Hi, I'm [Your Name]!
+     Hi, I'm [Zahir]!
    </h1>
    ```
 
