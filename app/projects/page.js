@@ -1,138 +1,172 @@
-<<<<<<< HEAD
-export default function Projects() {
-  return (
-    <div className="min-h-screen p-8">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-5xl font-bold mb-12">My Projects</h1>
-        
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
-          {/* Project Card Example - Duplicate this 3 times */}
-          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-            <div className="h-48 bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center">
-              <p className="text-white font-bold text-xl">Project Image Here</p>
-            </div>
-            <div className="p-6">
-              <h3 className="text-2xl font-bold mb-2">Project Title</h3>
-              <p className="text-gray-600 mb-4">
-                Write a brief description of your project here.
-              </p>
-              <div className="flex gap-2">
-                <span className="text-sm bg-gray-200 px-3 py-1 rounded">Tech 1</span>
-                <span className="text-sm bg-gray-200 px-3 py-1 rounded">Tech 2</span>
-              </div>
-            </div>
-          </div>
-
-          {/* TODO: Add 2 more project cards */}
-          
-        </div>
-
-=======
-import Image from 'next/image';
-import Link from 'next/link';
+"use client"
+import { useEffect, useState } from 'react'
+import Image from 'next/image'
+import Link from 'next/link'
+import ProjectForm from './components/ProjectForm'
 
 export default function Projects() {
-  // TODO: Students will implement the following:
-  // 1. Convert this server component to a client component
-  // 2. Add state management for projects, loading, and form visibility
-  // 3. Implement API fetch functions to get projects from the database
-  // 4. Add project creation functionality using the ProjectForm component
-  // 5. Handle loading and error states
+  const [projects, setProjects] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [error, setError] = useState(null)
 
-  // For now, show placeholder content
-  const placeholderProjects = [];
+  useEffect(() => {
+    let mounted = true
+    async function load() {
+      setLoading(true)
+      try {
+        const res = await fetch('/api/projects')
+        const data = await res.json()
+        if (mounted) setProjects(data || [])
+      } catch (err) {
+        console.error(err)
+        if (mounted) setError('Failed to load projects')
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+    load()
+    return () => { mounted = false }
+  }, [])
+
+  async function handleCreate(formData) {
+    try {
+      const res = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      })
+      if (!res.ok) throw new Error('Failed to create project')
+      const created = await res.json()
+      // prepend created project
+      setProjects(prev => [created, ...prev])
+      setShowForm(false)
+    } catch (err) {
+      console.error(err)
+      setError('Failed to create project')
+    }
+  }
 
   return (
-    <div className="min-h-screen p-8">
+    <div className="min-h-screen p-8 bg-gradient-to-br from-teal-50 to-green-50">
       <div className="max-w-6xl mx-auto">
-        {/* Header - students will add "Add New Project" button here */}
+        {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-4">
-          <h1 className="text-5xl font-bold">My Projects</h1>
-          {/* TODO: Add "Add New Project" button that shows/hides the form */}
+          <h1 className="text-5xl font-bold text-gray-900">My Projects</h1>
+          <div className="flex items-center gap-3">
+            <button
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+              onClick={() => setShowForm(true)}
+              aria-label="Add New Project"
+            >
+              Add New Project
+            </button>
+          </div>
         </div>
 
-        {/* TODO: Add ProjectForm component here */}
-        {/* The form should be conditionally rendered based on showForm state */}
-
-        {/* Projects Grid */}
-        {placeholderProjects.length > 0 ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
-            {placeholderProjects.map((project) => (
-              <div key={project.id} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                <div className="h-48 bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center">
-                  {project.imageUrl ? (
-                    <Image
-                      src={project.imageUrl}
-                      alt={project.title}
-                      width={400}
-                      height={200}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <p className="text-white font-bold text-xl">No Image</p>
-                  )}
-                </div>
-                <div className="p-6">
-                  <h3 className="text-2xl font-bold mb-2">{project.title}</h3>
-                  <p className="text-gray-600 mb-4 line-clamp-3">{project.description}</p>
-                  <div className="flex gap-2 mb-4 flex-wrap">
-                    {project.technologies?.slice(0, 3).map((tech, index) => (
-                      <span key={index} className="text-sm bg-gray-200 px-3 py-1 rounded">
-                        {tech}
-                      </span>
-                    ))}
-                    {project.technologies?.length > 3 && (
-                      <span className="text-sm text-gray-500 px-3 py-1">
-                        +{project.technologies.length - 3} more
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <Link 
-                      href={`/projects/${project.id}`}
-                      className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
-                    >
-                      View Details
-                    </Link>
-                    {project.projectUrl && (
-                      <a
-                        href={project.projectUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300 transition-colors"
-                      >
-                        Live Demo
-                      </a>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          /* Empty State - Students will enhance this */
-          <div className="text-center py-12">
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold mb-4">No projects yet</h2>
-              <p className="text-gray-600 mb-6">
-                Get started by setting up your database and implementing the API routes!
-              </p>
-            </div>
-
-            <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6 max-w-md mx-auto">
-              <h3 className="font-bold text-blue-900 mb-2">🚀 Getting Started:</h3>
-              <ol className="text-blue-800 space-y-1 list-decimal list-inside text-left">
-                <li>Set up your Neon database</li>
-                <li>Implement the API routes</li>
-                <li>Add project creation functionality</li>
-                <li>Convert this page to use database data</li>
-              </ol>
-            </div>
+        {/* Conditionally render form */}
+        {showForm && (
+          <div className="mb-8">
+            <ProjectForm isOpen={true} onSubmit={handleCreate} onCancel={() => setShowForm(false)} />
           </div>
         )}
 
+        {/* Projects Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+          {/* Project 1: Little Buddies */}
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl hover:scale-105 transition-all duration-300 border border-green-100">
+            <div className="h-48 bg-gradient-to-r from-green-400 to-green-600 flex items-center justify-center relative overflow-hidden">
+              <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
+              <p className="text-white font-bold text-2xl z-10 drop-shadow-lg">Little Buddies</p>
+            </div>
+            <div className="p-6">
+              <h3 className="text-2xl font-bold mb-3 text-gray-900">Little Buddies</h3>
+              <p className="text-gray-600 mb-4 line-clamp-4">
+                An interactive web app that helps people who spend most of their day sitting stay active. 
+                Features a personal AI buddy that acts as your health and fitness trainer, giving advice 
+                and reminding you to get moving.
+              </p>
+              <div className="flex flex-wrap gap-2 mb-4">
+                <span className="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full font-semibold">AI</span>
+                <span className="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full font-semibold">Next.js</span>
+                <span className="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full font-semibold">React</span>
+                <span className="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full font-semibold">Health</span>
+              </div>
+              <Link 
+                href="https://little-buddies.vercel.app/" 
+                target="_blank"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg group"
+              >
+                View Project 
+                <span className="group-hover:translate-x-1 transition-transform">→</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Project 2: Movie Finder App */}
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl hover:scale-105 transition-all duration-300 border border-teal-100">
+            <div className="h-48 bg-gradient-to-r from-teal-400 to-teal-600 flex items-center justify-center relative overflow-hidden">
+              <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
+              <p className="text-white font-bold text-2xl z-10 drop-shadow-lg">Movie Finder</p>
+            </div>
+            <div className="p-6">
+              <h3 className="text-2xl font-bold mb-3 text-gray-900">Movie Finder App</h3>
+              <p className="text-gray-600 mb-4 line-clamp-4">
+                Your smart movie companion! Using AI, it quickly finds movies — whether classics or latest 
+                releases. Save your favorite movies for later, creating a personalized watchlist to never 
+                forget what to watch next.
+              </p>
+              <div className="flex flex-wrap gap-2 mb-4">
+                <span className="text-sm bg-teal-100 text-teal-800 px-3 py-1 rounded-full font-semibold">AI</span>
+                <span className="text-sm bg-teal-100 text-teal-800 px-3 py-1 rounded-full font-semibold">API</span>
+                <span className="text-sm bg-teal-100 text-teal-800 px-3 py-1 rounded-full font-semibold">React</span>
+                <span className="text-sm bg-teal-100 text-teal-800 px-3 py-1 rounded-full font-semibold">Database</span>
+              </div>
+              <Link 
+                href="https://moviedata-two.vercel.app/" 
+                target="_blank"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg group"
+              >
+                View Project 
+                <span className="group-hover:translate-x-1 transition-transform">→</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Project 3: Task Management App */}
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl hover:scale-105 transition-all duration-300 border border-green-100">
+            <div className="h-48 bg-gradient-to-r from-green-500 to-teal-500 flex items-center justify-center relative overflow-hidden">
+              <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
+              <p className="text-white font-bold text-2xl z-10 drop-shadow-lg">Task Manager</p>
+            </div>
+            <div className="p-6">
+              <h3 className="text-2xl font-bold mb-3 text-gray-900">Task Management App</h3>
+              <p className="text-gray-600 mb-4 line-clamp-4">
+                Collaborative task management application with real-time updates. Organize your work, 
+                collaborate with team members, and track progress efficiently with an intuitive interface.
+              </p>
+              <div className="flex flex-wrap gap-2 mb-4">
+                <span className="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full font-semibold">Real-time</span>
+                <span className="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full font-semibold">React</span>
+                <span className="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full font-semibold">Prisma</span>
+                <span className="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full font-semibold">PostgreSQL</span>
+              </div>
+              <Link 
+                href="https://github.com/yourusername/task-manager" 
+                target="_blank"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg group"
+              >
+                View Project 
+                <span className="group-hover:translate-x-1 transition-transform">→</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+
         {/* Project Ideas */}
->>>>>>> solution
         <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-6">
           <h3 className="font-bold text-yellow-900 mb-2">💡 Project Ideas:</h3>
           <ul className="text-yellow-800 space-y-1">
@@ -144,10 +178,6 @@ export default function Projects() {
         </div>
       </div>
     </div>
-<<<<<<< HEAD
-  )
-}
-=======
   );
 }
 
@@ -158,4 +188,3 @@ export default function Projects() {
 // 4. Handle async operations and error states
 // 5. Build interactive user interfaces
 // 6. Practice component composition
->>>>>>> solution
